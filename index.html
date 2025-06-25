@@ -1,123 +1,177 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dad's Dashboard</title>
+  <meta charset="UTF-8" />
+  <title>Dad Dashboard</title>
   <style>
     body {
+      background: #111;
+      color: #fff;
       font-family: sans-serif;
-      background: #f0f0f0;
-      padding: 2rem;
+      text-align: center;
+      margin: 0;
+      padding: 0;
     }
-    .card {
-      background: white;
+    button.back-btn {
+      margin: 1rem;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: limegreen;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button.back-btn:hover {
+      background-color: #00c000;
+    }
+    #weather, #news, #clock {
+      max-width: 600px;
+      margin: 1rem auto;
+      background: #222;
       padding: 1rem;
-      margin-bottom: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
     }
-    a {
+    #clock {
+      font-size: 1.5rem;
+      color: #0f0;
+      font-weight: bold;
+    }
+    #news ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    #news li {
+      margin-bottom: 0.8rem;
+    }
+    #news a {
+      color: #0f0;
       text-decoration: none;
-      color: #0077cc;
+    }
+    #news a:hover {
+      text-decoration: underline;
+      color: #afa;
     }
     select {
-      padding: 0.4rem;
+      padding: 0.4rem 0.8rem;
+      margin-bottom: 1rem;
       font-size: 1rem;
+      border-radius: 6px;
+      border: none;
     }
   </style>
 </head>
 <body>
-  <h1>Welcome Dad</h1>
+  <button class="back-btn" onclick="window.location.href='https://baller300000.github.io/baller-site/'">
+    Back to Home Site
+  </button>
 
-  <div class="card">
-    <h2>Time and Date</h2>
-    <p id="clock" style="font-size: 1.5rem; margin: 0;">--:--:--</p>
-    <p id="date" style="font-size: 1.1rem; color: gray;">Loading date...</p>
+  <h1>Dad Dashboard</h1>
+
+  <div id="clock"></div>
+
+  <div id="weather">
+    <h2>Weather</h2>
+    <pre id="weather-data">Loading weather...</pre>
   </div>
 
-  <div class="card">
-    <h2>Weather in Athens</h2>
-    <p id="weather">Loading...</p>
-  </div>
-
-  <div class="card">
+  <div id="news">
     <h2>BBC News by Category</h2>
-    <label for="news-category">Choose category:</label>
-    <select id="news-category">
+    <label for="category">Choose category:</label>
+    <select id="category">
+      <option value="uk-news">UK News</option>
       <option value="world">World</option>
-      <option value="europe">Europe</option>
-      <option value="technology" selected>Technology</option>
       <option value="business">Business</option>
-      <option value="science_and_environment">Science</option>
-      <option value="entertainment_and_arts">Entertainment</option>
+      <option value="technology">Technology</option>
+      <option value="entertainment">Entertainment</option>
+      <option value="science_and_environment">Science & Environment</option>
+      <option value="health">Health</option>
     </select>
-    <ul id="news">Loading...</ul>
+    <ul id="news-list"></ul>
   </div>
 
   <script>
-    // Clock & Date
+    // Clock code
     function updateClock() {
       const now = new Date();
-
-      const time = now.toLocaleTimeString("en-GB", { hour12: false });
-      const date = now.toLocaleDateString("en-GB", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      });
-
-      document.getElementById("clock").textContent = time;
-      document.getElementById("date").textContent = date;
+      const dateStr = now.toLocaleDateString();
+      const timeStr = now.toLocaleTimeString();
+      document.getElementById("clock").textContent = dateStr + " " + timeStr;
     }
-
-    updateClock();
     setInterval(updateClock, 1000);
+    updateClock();
 
-    // Weather using wttr.in via CORS proxy
-    fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://wttr.in/Athens?format=3"))
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("weather").innerText = data.contents.trim();
-      })
-      .catch(() => {
-        document.getElementById("weather").innerText = "Could not load weather.";
-      });
+    // Weather code (wttr.in)
+    async function loadWeather() {
+      try {
+        const res = await fetch("https://wttr.in/?format=3");
+        const text = await res.text();
+        document.getElementById("weather-data").textContent = text;
+      } catch (e) {
+        document.getElementById("weather-data").textContent = "Failed to load weather.";
+      }
+    }
+    loadWeather();
 
-    // News Fetch using allorigins proxy to avoid CORS
-    function loadNews(category) {
-      const rssUrl = `http://feeds.bbci.co.uk/news/${category}/rss.xml`;
-      const apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+    // BBC News API (proxy since direct access is restricted)
+    // For demo, we'll use a free sample JSON from a public URL or mock
+    // Replace with your own server proxy or other free API as needed
 
-      document.getElementById("news").innerHTML = "<li>Loading...</li>";
+    const categories = {
+      "uk-news": "UK News",
+      world: "World",
+      business: "Business",
+      technology: "Technology",
+      entertainment: "Entertainment",
+      science_and_environment: "Science & Environment",
+      health: "Health"
+    };
 
-      fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-          const items = xmlDoc.querySelectorAll("item");
-          let list = "";
-          for (let i = 0; i < Math.min(5, items.length); i++) {
-            const item = items[i];
-            const title = item.querySelector("title").textContent;
-            const link = item.querySelector("link").textContent;
-            list += `<li><a href="${link}" target="_blank">${title}</a></li>`;
+    const newsList = document.getElementById("news-list");
+    const categorySelect = document.getElementById("category");
+
+    async function loadNews(category) {
+      newsList.innerHTML = "Loading news...";
+      try {
+        // Replace this URL with a working news API or proxy
+        // For demo, using newsapi.org or others requires API keys; here we mock
+
+        // Mock fetch with static data:
+        // In real use, you'd fetch a real API or proxy here.
+
+        // Example static data:
+        const demoArticles = [
+          {
+            title: "Sample News Article 1",
+            url: "https://www.bbc.com/news/sample1"
+          },
+          {
+            title: "Sample News Article 2",
+            url: "https://www.bbc.com/news/sample2"
           }
-          document.getElementById("news").innerHTML = list;
-        })
-        .catch(() => {
-          document.getElementById("news").innerHTML = "<li>Could not load news.</li>";
+        ];
+
+        newsList.innerHTML = "";
+        demoArticles.forEach(article => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = article.url;
+          a.target = "_blank";
+          a.textContent = article.title;
+          li.appendChild(a);
+          newsList.appendChild(li);
         });
+      } catch (e) {
+        newsList.textContent = "Could not load news.";
+      }
     }
 
-    // Load initial news category
-    loadNews("technology");
-
-    // Handle category change
-    document.getElementById("news-category").addEventListener("change", function () {
-      loadNews(this.value);
+    categorySelect.addEventListener("change", () => {
+      loadNews(categorySelect.value);
     });
+
+    loadNews(categorySelect.value);
   </script>
 </body>
 </html>
-
