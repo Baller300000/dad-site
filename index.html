@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dad's Dashboard</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 2rem;
+    }
+    .card {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    a {
+      text-decoration: none;
+      color: #0077cc;
+    }
+    select {
+      padding: 0.4rem;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome Dad</h1>
+
+  <div class="card">
+    <h2>Time and Date</h2>
+    <p id="clock" style="font-size: 1.5rem; margin: 0;">--:--:--</p>
+    <p id="date" style="font-size: 1.1rem; color: gray;">Loading date...</p>
+  </div>
+
+  <div class="card">
+    <h2>Weather in Athens</h2>
+    <p id="weather">Loading...</p>
+  </div>
+
+  <div class="card">
+    <h2>BBC News by Category</h2>
+    <label for="news-category">Choose category:</label>
+    <select id="news-category">
+      <option value="world">World</option>
+      <option value="europe">Europe</option>
+      <option value="technology" selected>Technology</option>
+      <option value="business">Business</option>
+      <option value="science_and_environment">Science</option>
+      <option value="entertainment_and_arts">Entertainment</option>
+    </select>
+    <ul id="news">Loading...</ul>
+  </div>
+
+  <script>
+    // Clock & Date
+    function updateClock() {
+      const now = new Date();
+
+      const time = now.toLocaleTimeString("en-GB", { hour12: false });
+      const date = now.toLocaleDateString("en-GB", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+
+      document.getElementById("clock").textContent = time;
+      document.getElementById("date").textContent = date;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Weather using wttr.in
+    fetch("https://wttr.in/Athens?format=3")
+      .then(response => response.text())
+      .then(text => {
+        document.getElementById("weather").innerText = text;
+      })
+      .catch(() => {
+        document.getElementById("weather").innerText = "Could not load weather.";
+      });
+
+    // News Fetch
+    function loadNews(category) {
+      const rssUrl = `http://feeds.bbci.co.uk/news/${category}/rss.xml`;
+      const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+
+      document.getElementById("news").innerHTML = "<li>Loading...</li>";
+
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          const items = data.items.slice(0, 5);
+          const list = items.map(article =>
+            `<li><a href="${article.link}" target="_blank">${article.title}</a></li>`
+          ).join('');
+          document.getElementById("news").innerHTML = list;
+        })
+        .catch(() => {
+          document.getElementById("news").innerHTML = "<li>Could not load news.</li>";
+        });
+    }
+
+    // Load initial category
+    loadNews("technology");
+
+    // Change category
+    document.getElementById("news-category").addEventListener("change", function () {
+      loadNews(this.value);
+    });
+  </script>
+</body>
+</html>
+
