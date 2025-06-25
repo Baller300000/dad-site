@@ -73,30 +73,36 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Weather using wttr.in
-    fetch("https://wttr.in/Athens?format=3")
-      .then(response => response.text())
-      .then(text => {
-        document.getElementById("weather").innerText = text;
+    // Weather using wttr.in via CORS proxy
+    fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://wttr.in/Athens?format=3"))
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("weather").innerText = data.contents.trim();
       })
       .catch(() => {
         document.getElementById("weather").innerText = "Could not load weather.";
       });
 
-    // News Fetch
+    // News Fetch using allorigins proxy to avoid CORS
     function loadNews(category) {
       const rssUrl = `http://feeds.bbci.co.uk/news/${category}/rss.xml`;
-      const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+      const apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
 
       document.getElementById("news").innerHTML = "<li>Loading...</li>";
 
       fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
-          const items = data.items.slice(0, 5);
-          const list = items.map(article =>
-            `<li><a href="${article.link}" target="_blank">${article.title}</a></li>`
-          ).join('');
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+          const items = xmlDoc.querySelectorAll("item");
+          let list = "";
+          for (let i = 0; i < Math.min(5, items.length); i++) {
+            const item = items[i];
+            const title = item.querySelector("title").textContent;
+            const link = item.querySelector("link").textContent;
+            list += `<li><a href="${link}" target="_blank">${title}</a></li>`;
+          }
           document.getElementById("news").innerHTML = list;
         })
         .catch(() => {
@@ -104,10 +110,10 @@
         });
     }
 
-    // Load initial category
+    // Load initial news category
     loadNews("technology");
 
-    // Change category
+    // Handle category change
     document.getElementById("news-category").addEventListener("change", function () {
       loadNews(this.value);
     });
