@@ -77,22 +77,25 @@
   </div>
 
   <div id="news">
-    <h2>BBC News by Category</h2>
+    <h2>News by Category</h2>
     <label for="category">Choose category:</label>
     <select id="category">
-      <option value="uk-news">UK News</option>
-      <option value="world">World</option>
+      <option value="top">Top</option>
       <option value="business">Business</option>
-      <option value="technology">Technology</option>
       <option value="entertainment">Entertainment</option>
-      <option value="science_and_environment">Science & Environment</option>
+      <option value="environment">Environment</option>
+      <option value="food">Food</option>
       <option value="health">Health</option>
+      <option value="politics">Politics</option>
+      <option value="science">Science</option>
+      <option value="sports">Sports</option>
+      <option value="technology">Technology</option>
     </select>
     <ul id="news-list"></ul>
   </div>
 
   <script>
-    // Clock code
+    // Clock
     function updateClock() {
       const now = new Date();
       const dateStr = now.toLocaleDateString();
@@ -102,7 +105,7 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Weather code (wttr.in)
+    // Weather from wttr.in
     async function loadWeather() {
       try {
         const res = await fetch("https://wttr.in/?format=3");
@@ -114,54 +117,33 @@
     }
     loadWeather();
 
-    // BBC News API (proxy since direct access is restricted)
-    // For demo, we'll use a free sample JSON from a public URL or mock
-    // Replace with your own server proxy or other free API as needed
-
-    const categories = {
-      "uk-news": "UK News",
-      world: "World",
-      business: "Business",
-      technology: "Technology",
-      entertainment: "Entertainment",
-      science_and_environment: "Science & Environment",
-      health: "Health"
-    };
-
+    // Newsdata.io news fetching
+    const API_KEY = 'pub_2001828d69e94a7caacdd226e00bd341';
     const newsList = document.getElementById("news-list");
     const categorySelect = document.getElementById("category");
 
     async function loadNews(category) {
       newsList.innerHTML = "Loading news...";
       try {
-        // Replace this URL with a working news API or proxy
-        // For demo, using newsapi.org or others requires API keys; here we mock
-
-        // Mock fetch with static data:
-        // In real use, you'd fetch a real API or proxy here.
-
-        // Example static data:
-        const demoArticles = [
-          {
-            title: "Sample News Article 1",
-            url: "https://www.bbc.com/news/sample1"
-          },
-          {
-            title: "Sample News Article 2",
-            url: "https://www.bbc.com/news/sample2"
-          }
-        ];
+        const url = `https://newsdata.io/api/1/news?apikey=${API_KEY}&category=${category}&language=en`;
+        const response = await fetch(url);
+        const data = await response.json();
 
         newsList.innerHTML = "";
-        demoArticles.forEach(article => {
-          const li = document.createElement("li");
-          const a = document.createElement("a");
-          a.href = article.url;
-          a.target = "_blank";
-          a.textContent = article.title;
-          li.appendChild(a);
-          newsList.appendChild(li);
-        });
+
+        if (data.results && data.results.length > 0) {
+          data.results.forEach(article => {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.href = article.link;
+            a.target = "_blank";
+            a.textContent = article.title;
+            li.appendChild(a);
+            newsList.appendChild(li);
+          });
+        } else {
+          newsList.textContent = "No news found for this category.";
+        }
       } catch (e) {
         newsList.textContent = "Could not load news.";
       }
@@ -175,3 +157,4 @@
   </script>
 </body>
 </html>
+
