@@ -80,16 +80,18 @@
     <h2>News by Category</h2>
     <label for="category">Choose category:</label>
     <select id="category">
-      <option value="top">Top</option>
+      <option value="national">National</option>
       <option value="business">Business</option>
-      <option value="entertainment">Entertainment</option>
-      <option value="environment">Environment</option>
-      <option value="food">Food</option>
-      <option value="health">Health</option>
-      <option value="politics">Politics</option>
-      <option value="science">Science</option>
       <option value="sports">Sports</option>
+      <option value="world">World</option>
+      <option value="politics">Politics</option>
       <option value="technology">Technology</option>
+      <option value="startup">Startup</option>
+      <option value="entertainment">Entertainment</option>
+      <option value="miscellaneous">Miscellaneous</option>
+      <option value="hatke">Hatke</option>
+      <option value="science">Science</option>
+      <option value="automobile">Automobile</option>
     </select>
     <ul id="news-list"></ul>
   </div>
@@ -117,25 +119,22 @@
     }
     loadWeather();
 
-    // Newsdata.io news fetching
-    const API_KEY = 'pub_2001828d69e94a7caacdd226e00bd341';
+    // Inshorts News API
     const newsList = document.getElementById("news-list");
     const categorySelect = document.getElementById("category");
 
     async function loadNews(category) {
       newsList.innerHTML = "Loading news...";
       try {
-        const url = `https://newsdata.io/api/1/news?apikey=${API_KEY}&category=${category}&language=en`;
-        const response = await fetch(url);
-        const data = await response.json();
+        const res = await fetch(`https://inshorts.deta.dev/news?category=${category}`);
+        const data = await res.json();
 
         newsList.innerHTML = "";
-
-        if (data.results && data.results.length > 0) {
-          data.results.forEach(article => {
+        if (data.success && data.data.length > 0) {
+          data.data.forEach(article => {
             const li = document.createElement("li");
             const a = document.createElement("a");
-            a.href = article.link;
+            a.href = article.url;
             a.target = "_blank";
             a.textContent = article.title;
             li.appendChild(a);
@@ -157,4 +156,4 @@
   </script>
 </body>
 </html>
-
+ 
