@@ -53,7 +53,7 @@
       text-decoration: underline;
       color: #afa;
     }
-    select {
+    select, input {
       padding: 0.4rem 0.8rem;
       margin-bottom: 1rem;
       font-size: 1rem;
@@ -73,6 +73,9 @@
 
   <div id="weather">
     <h2>Weather</h2>
+    <label for="city-input">City:</label>
+    <input type="text" id="city-input" placeholder="Athens" />
+    <button id="load-weather-btn">Load Weather</button>
     <pre id="weather-data">Loading weather...</pre>
   </div>
 
@@ -99,17 +102,27 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Weather from wttr.in
-    async function loadWeather() {
+    // Weather from wttr.in with city input
+    async function loadWeather(city) {
+      city = city || "Athens";
       try {
-        const res = await fetch("https://wttr.in/?format=3");
+        const res = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=3&m`);
         const text = await res.text();
         document.getElementById("weather-data").textContent = text;
       } catch (e) {
         document.getElementById("weather-data").textContent = "Failed to load weather.";
       }
     }
+
+    // Load default weather
     loadWeather();
+
+    document.getElementById("load-weather-btn").addEventListener("click", () => {
+      const city = document.getElementById("city-input").value.trim();
+      if(city) {
+        loadWeather(city);
+      }
+    });
 
     // News with Economist RSS via rss2json
     const newsList = document.getElementById("news-list");
@@ -117,7 +130,7 @@
 
     const rssFeeds = {
       top: "https://www.economist.com/rss/rss.xml",
-      politics: "https://www.economist.com/united-states/rss.xml", // closest politics feed
+      politics: "https://www.economist.com/united-states/rss.xml",
       economics: "https://www.economist.com/business-and-finance/rss.xml",
       technology: "https://www.economist.com/science-and-technology/rss.xml",
     };
