@@ -5,171 +5,154 @@
   <title>Dad Dashboard</title>
   <style>
     body {
-      background: #111;
-      color: #fff;
-      font-family: sans-serif;
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
       text-align: center;
-      margin: 0;
-      padding: 0;
+      padding: 2rem;
     }
-    button.back-btn {
-      margin: 1rem;
-      padding: 10px 20px;
-      font-size: 1rem;
-      background: limegreen;
-      color: black;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+
+    h1 {
+      margin-bottom: 0.5rem;
     }
-    button.back-btn:hover {
-      background-color: #00c000;
-    }
-    #weather, #news, #clock {
+
+    .section {
+      margin: 2rem auto;
       max-width: 600px;
-      margin: 1rem auto;
       background: #222;
       padding: 1rem;
-      border-radius: 8px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #0f0;
     }
-    #clock {
-      font-size: 1.5rem;
-      color: #0f0;
-      font-weight: bold;
-    }
-    #news ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    #news li {
-      margin-bottom: 0.8rem;
-    }
-    #news a {
-      color: #0f0;
-      text-decoration: none;
-    }
-    #news a:hover {
-      text-decoration: underline;
-      color: #afa;
-    }
-    select, input {
-      padding: 0.4rem 0.8rem;
-      margin-bottom: 1rem;
+
+    label, select, input, button {
+      margin: 0.5rem;
       font-size: 1rem;
-      border-radius: 6px;
+    }
+
+    input {
+      padding: 5px;
+    }
+
+    button {
+      padding: 8px 16px;
+      cursor: pointer;
       border: none;
+      border-radius: 5px;
+      background-color: limegreen;
+      color: black;
+    }
+
+    button:hover {
+      background-color: #00c000;
+    }
+
+    #weather, #clock, #news {
+      margin-top: 1rem;
+      white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
-  <button class="back-btn" onclick="window.location.href='https://baller300000.github.io/baller-site/'">
-    Back to Home Site
-  </button>
 
   <h1>Dad Dashboard</h1>
+  <div id="clock" class="section"></div>
 
-  <div id="clock"></div>
-
-  <div id="weather">
+  <div class="section">
     <h2>Weather</h2>
-    <label for="city-input">City:</label>
-    <input type="text" id="city-input" placeholder="Athens" />
-    <button id="load-weather-btn">Load Weather</button>
-    <pre id="weather-data">Loading weather...</pre>
+    <label for="city">City:</label>
+    <input type="text" id="city" value="Athens" />
+    <button onclick="loadWeather()">Load Weather</button>
+    <div id="weather">Loading...</div>
   </div>
 
-  <div id="news">
+  <div class="section">
     <h2>News by Category</h2>
-    <label for="category">Choose category:</label>
-    <select id="category">
-      <option value="top">Top Stories</option>
+    <label for="categorySelect">Choose category:</label>
+    <select id="categorySelect">
+      <option value="top">Top</option>
       <option value="politics">Politics</option>
       <option value="economics">Economics</option>
-      <option value="technology">Technology</option>
+      <option value="tech">Tech</option>
     </select>
-    <ul id="news-list"></ul>
+    <button onclick="loadNews()">Load News</button>
+    <div id="news">No news yet.</div>
   </div>
+
+  <button onclick="location.href='https://baller300000.github.io/baller-site/'">Back to Home Site</button>
 
   <script>
     // Clock
     function updateClock() {
       const now = new Date();
-      const dateStr = now.toLocaleDateString();
-      const timeStr = now.toLocaleTimeString();
-      document.getElementById("clock").textContent = dateStr + " " + timeStr;
+      const timeString = now.toLocaleString("en-GB", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      document.getElementById("clock").textContent = timeString;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Weather from wttr.in with city input
-    async function loadWeather(city) {
-      city = city || "Athens";
-      try {
-        const res = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=3&m`);
-        const text = await res.text();
-        document.getElementById("weather-data").textContent = text;
-      } catch (e) {
-        document.getElementById("weather-data").textContent = "Failed to load weather.";
-      }
-    }
+    // Weather using wttr.in
+    function loadWeather() {
+      const city = document.getElementById("city").value.trim();
+      if (!city) return;
 
-    // Load default weather
+      fetch(`https://wttr.in/${city}?format=%C+%t`)
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById("weather").textContent = `${city}: ${data}`;
+        })
+        .catch(() => {
+          document.getElementById("weather").textContent = "Could not load weather.";
+        });
+    }
     loadWeather();
 
-    document.getElementById("load-weather-btn").addEventListener("click", () => {
-      const city = document.getElementById("city-input").value.trim();
-      if(city) {
-        loadWeather(city);
-      }
-    });
-
-    // News with Economist RSS via rss2json
-    const newsList = document.getElementById("news-list");
-    const categorySelect = document.getElementById("category");
-
-    const rssFeeds = {
-      top: "https://www.economist.com/rss/rss.xml",
-      politics: "https://www.economist.com/united-states/rss.xml",
-      economics: "https://www.economist.com/business-and-finance/rss.xml",
-      technology: "https://www.economist.com/science-and-technology/rss.xml",
+    // News using Economist RSS + rss2json
+    const feeds = {
+      top: "https://www.economist.com/latest/rss.xml",
+      politics: "https://www.economist.com/politics/rss.xml",
+      economics: "https://www.economist.com/finance-and-economics/rss.xml",
+      tech: "https://www.economist.com/science-and-technology/rss.xml"
     };
 
-    async function loadNews(category) {
-      const rssUrl = encodeURIComponent(rssFeeds[category] || rssFeeds.top);
-      const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
+    function loadNews() {
+      const category = document.getElementById("categorySelect").value;
+      const newsContainer = document.getElementById("news");
+      newsContainer.innerHTML = "Loading...";
 
-      newsList.innerHTML = "Loading news...";
-      try {
-        const res = await fetch(apiUrl);
-        const data = await res.json();
+      const rssUrl = feeds[category];
+      const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
-        newsList.innerHTML = "";
+      fetch(proxyUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.items || data.items.length === 0) {
+            newsContainer.textContent = "No news found.";
+            return;
+          }
 
-        if (data.items && data.items.length > 0) {
-          data.items.forEach(item => {
-            const li = document.createElement("li");
-            const a = document.createElement("a");
-            a.href = item.link;
-            a.target = "_blank";
-            a.textContent = item.title;
-            li.appendChild(a);
-            newsList.appendChild(li);
+          newsContainer.innerHTML = "";
+          data.items.slice(0, 5).forEach(item => {
+            const div = document.createElement("div");
+            div.innerHTML = `<strong>${item.title}</strong><br><a href="${item.link}" target="_blank">Read more</a><hr>`;
+            newsContainer.appendChild(div);
           });
-        } else {
-          newsList.textContent = "No news found.";
-        }
-      } catch (e) {
-        newsList.textContent = "Could not load news.";
-      }
+        })
+        .catch(err => {
+          console.error("Failed to load news:", err);
+          newsContainer.textContent = "Could not load news.";
+        });
     }
-
-    categorySelect.addEventListener("change", () => {
-      loadNews(categorySelect.value);
-    });
-
-    loadNews(categorySelect.value);
   </script>
+
 </body>
 </html>
 
